@@ -68,7 +68,7 @@ This vision is included so the Ralph loop biases toward designs that don't paint
 ## 3. Goals (this spec)
 
 - **G1** A clean fork on a new branch with all SQL driver and dialect code removed.
-- **G2** A `yarn build` and `yarn lint` green on the cleansed codebase.
+- **G2** `yarn all:lint`, `yarn test:unit`, and `yarn bks:build` green on the cleansed codebase.
 - **G3** A "New Connection" dialog that accepts an org-friendly name + My Domain URL and triggers OAuth 2.0 Web Server flow.
 - **G4** Tokens persisted in Beekeeper's existing encrypted local app DB.
 - **G5** On connect, the left-side Entities Explorer renders an alphabetical list of every queryable sObject in the org (standard + custom, visually distinguishable).
@@ -83,7 +83,8 @@ This vision is included so the Ralph loop biases toward designs that don't paint
 - ❌ Do **not** replace jsforce with a hand-rolled REST client.
 - ❌ Do **not** rip out the Vue editor component or CodeMirror — leave the editor pane present but inert (it will become the SOQL editor in a later milestone).
 - ❌ Do **not** upgrade Electron / Vue / TypeScript versions during the cleanse. One change at a time.
-- ❌ Do **not** modify Beekeeper's commercial / Ultimate edition code paths if they exist in the community fork — stay strictly within community scope.
+- ❌ Do **not** modify Beekeeper's commercial / Ultimate **feature** code paths if they exist in the community fork — stay strictly within community scope.
+  - **Carve-out:** Electron entry points (`apps/studio/src-commercial/entrypoints/{main,preload,renderer,utility}.ts`) live under `src-commercial/` for build-tooling reasons but are *not* paid-tier feature code. They are in scope for the Phase 1 rebrand (window title, app name) and for Phase 2 IPC plumbing. Anything that looks like a feature gate, license check, or Ultimate-only module is out of scope — flag in `docs/cleanse-inventory.md` and skip.
 - ❌ Do **not** rebrand more than necessary in Phase 1 (icon, app name in `package.json`, window title) — full visual rebrand is later.
 
 ---
@@ -142,7 +143,7 @@ The Ralph loop should not start work until these are in place. If any are missin
   SF_API_VERSION=         # set by Task 0.1, e.g., 62.0 (latest GA at fork time)
   SF_OAUTH_REDIRECT_PORT=1717
   ```
-- **6.5** Node, Yarn, and Beekeeper's documented build prerequisites installed (verify against `apps/studio/README.md` in the fork).
+- **6.5** Node, Yarn, and Beekeeper's documented build prerequisites installed. The fork has no `apps/studio/README.md`; treat `CLAUDE.md` at the repo root as the authoritative list of build / test / lint commands. The root `README.md` covers user-facing install steps but not dev workflow.
 
 ---
 
@@ -150,12 +151,12 @@ The Ralph loop should not start work until these are in place. If any are missin
 
 **Execution environment:** Phase 1 is **cloud-friendly**. All work is deterministic, headless, terminal-driven (file deletions, dependency removal, lint/typecheck/build). No GUI required. Run in cloud sandbox or locally — both work. Recommended: cloud, to keep your local machine free.
 
-**Phase exit criteria (all must hold):**
+**Phase exit criteria (all must hold), all run from repo root:**
 
 - `yarn install` clean.
-- `yarn lint` exits 0.
-- `yarn typecheck` (or equivalent) exits 0.
-- `yarn build` produces an Electron bundle.
+- `yarn all:lint` exits 0.
+- `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json` exits 0. (No `typecheck` script exists; esbuild and Vite strip TypeScript without checking. Run `tsc --noEmit` ad-hoc as the type gate.)
+- `yarn bks:build` produces an Electron bundle.
 - App launches; connection manager dialog opens but offers no working connection types yet (or offers a stub "Salesforce" entry that errors gracefully).
 - No references remain to: `pg`, `mysql`, `mysql2`, `sqlite3`, `mariadb`, `mssql`, `tedious`, `oracledb`, `cassandra-driver`, `bigquery`, `redis`, `mongodb`, `cockroachdb`, or any DB-dialect SQL parser. Verify with `rg` after each removal.
 - **`better-sqlite3` is preserved** — it powers Beekeeper's own internal app DB (saved-connections store), which we are keeping.
@@ -171,10 +172,11 @@ The Ralph loop should not start work until these are in place. If any are missin
 
 **Action:**
 
-- Run `yarn install` and the full validation gate (`yarn lint`, `yarn typecheck`, `yarn build`) on the fork's `main` *before* creating the working branch. The loop must confirm the fork builds clean as-is. If it doesn't, halt — we don't want to spend hours chasing a "regression" that was already broken.
+- Run `yarn install` and the full validation gate (`yarn all:lint`, `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json`, `yarn test:unit`, `yarn bks:build`) on the fork's `main` *before* creating the working branch. The loop must confirm the fork builds clean as-is. If it doesn't, halt — we don't want to spend hours chasing a "regression" that was already broken.
+- Also write `docs/build-commands.md` capturing the exact gate commands the loop will use for the rest of the run, so future tasks don't paraphrase from this PRD and drift.
 - Then create `feat/soql-manager-phase-1-cleanse` and proceed.
 
-**Done when:** Both docs committed on the working branch, all four gate commands exit 0 on the unmodified codebase, and the loop can quote the starting commit hash back.
+**Done when:** All three docs (`upstream-pin.md`, `api-version.md`, `build-commands.md`) committed on the working branch, every gate command exits 0 on the unmodified codebase, and the loop can quote the starting commit hash back.
 
 **Notes:** This task is the only one in Phase 1 that should run before the inventory. Skip it and the loop loses its baseline.
 
@@ -279,8 +281,8 @@ The Ralph loop should not start work until these are in place. If any are missin
 
 - `apps/studio/package.json` — `name`, `productName`, `description`.
 - Root `package.json` — `name`.
-- `apps/studio/src/background.ts` — Electron `BrowserWindow` title.
-- `apps/studio/electron-builder.yml` (or equivalent) — `appId`, `productName`.
+- `apps/studio/src-commercial/entrypoints/main.ts` — Electron `BrowserWindow` title. (Entry points live under `src-commercial/` for build reasons; covered by the §4 carve-out.)
+- `apps/studio/electron-builder-config.js` — `appId`, `productName`. (There is no `electron-builder.yml`; config is JS.)
 
 **Suggested values:**
 
@@ -293,29 +295,30 @@ appId: "io.soqlmanager.app"
 
 **Do not change** any LICENSE / NOTICE files. Beekeeper community edition is GPL — preserve attribution and add a `FORK_NOTICE.md` at repo root crediting the upstream project.
 
-**Done when:** `yarn dev` launches an Electron window titled "SOQL Manager".
+**Done when:** `yarn bks:dev` launches an Electron window titled "SOQL Manager".
 
 ### Task 1.7 — Verify Phase 1
 
 **Goal:** Prove the cleanse is complete and the app still boots.
 
-**Commands the loop should run:**
+**Commands the loop should run (from repo root):**
 
 ```bash
 yarn install
-yarn lint
-yarn typecheck     # or `yarn vue-tsc --noEmit` — match what's in package.json
-yarn build
+yarn all:lint
+yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json   # ad-hoc type gate; no typecheck script exists
+yarn test:unit
+yarn bks:build
 ```
 
 **Manual smoke test (loop should describe expected screenshot, then halt for human):**
 
-- App launches.
+- `yarn bks:dev` launches the app.
 - Connection manager dialog opens.
 - Either no connection types are offered, or a single placeholder "Salesforce (coming soon)" entry exists that does nothing.
 - No console errors referencing missing modules (`Cannot find module 'pg'`, etc.).
 
-**Phase 1 is done when** all four `yarn` commands above exit 0 and the smoke test passes. **Tag the commit `phase-1-cleanse-complete`.**
+**Phase 1 is done when** all five commands above exit 0 and the smoke test passes. **Tag the commit `phase-1-cleanse-complete`.**
 
 ---
 
@@ -457,8 +460,9 @@ export type SfAuthError =
 
 **Files:**
 
-- `apps/studio/src/background.ts` (or wherever main-process handlers live).
-- `apps/studio/src/preload.ts` (or `src/common/ipc/`).
+- `apps/studio/src-commercial/entrypoints/main.ts` (main-process IPC handlers register here).
+- `apps/studio/src-commercial/entrypoints/preload.ts` (renderer-side bridge).
+- Existing IPC channel utilities under `apps/studio/src/common/` — find with `rg -l "ipcMain.handle|contextBridge"`.
 
 **Channels:**
 
@@ -502,14 +506,14 @@ export type SfAuthError =
 
 ### Task 2.8 — Verify Phase 2
 
-**Commands:**
+**Commands (from repo root):**
 
 ```bash
-yarn lint
-yarn typecheck
-yarn test                    # if Beekeeper has a test suite the loop has been adding to
-yarn build
-yarn dev                     # for manual smoke
+yarn all:lint
+yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json
+yarn test:unit
+yarn bks:build
+yarn bks:dev                 # for manual smoke
 ```
 
 **Manual acceptance script (loop should write this as `docs/poc-acceptance.md`):**
@@ -532,14 +536,16 @@ yarn dev                     # for manual smoke
 
 ## 9. Validation & gates the Ralph loop should run continuously
 
-After every meaningful edit, the loop should run, in order, and stop on the first failure:
+After every meaningful edit, the loop should run, in order (from repo root), and stop on the first failure:
 
 ```bash
-yarn lint --quiet
-yarn typecheck
-yarn test --silent           # if a test suite exists; otherwise skip with a warning
-yarn build                   # full build only at the end of a task, not every edit
+yarn all:lint
+yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json   # ad-hoc type gate; no typecheck script exists
+yarn test:unit                                                  # studio + ui-kit Jest suites
+yarn bks:build                                                  # full build only at task end, not every edit
 ```
+
+Note: there is no plain `yarn lint` or `yarn typecheck` in this repo. esbuild and Vite strip TypeScript types without checking, so `tsc --noEmit` is the only place type errors surface short of a full build. `yarn test:unit` is the closest match to "test suite" — `yarn test:integration` and `yarn test:e2e` exist but are heavier and not part of the per-edit loop.
 
 **Branching:** one branch per phase (`feat/soql-manager-phase-1-cleanse`, `feat/soql-manager-phase-2-poc`). Squash-merge to `main` only after the phase exit criteria are met. Tag at each phase boundary.
 
@@ -547,8 +553,8 @@ yarn build                   # full build only at the end of a task, not every e
 
 **"Stuck" heuristics for the loop:**
 
-- If the loop edits the same file 3+ times in a row trying to make typecheck pass, stop and write a `docs/blockers/<timestamp>.md` with the error and last 3 attempts. Halt the loop for human triage.
-- If a `yarn install` fails with a peer-dep conflict, do **not** add a `resolutions` block reflexively. Document and halt.
+- If the loop edits the same file 3+ times in a row trying to make lint or `tsc --noEmit` pass, stop and write a `docs/blockers/<timestamp>.md` with the error and last 3 attempts. Halt the loop for human triage.
+- If a `yarn install` fails with a peer-dep conflict, do **not** add *new* entries to root `resolutions`. (Two entries — `cpu-features` and `**/axios` — are inherited from upstream and stay.) Document and halt.
 - If an OAuth round-trip fails with a non-2xx error from Salesforce, capture the full error body and halt — do not retry blindly.
 
 ---

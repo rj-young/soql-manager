@@ -11,14 +11,19 @@ Drive `SOQL_MANAGER_PRD.md` to completion, one task at a time, in order. Phase 1
 ## Read this first
 
 1. `SOQL_MANAGER_PRD.md` — full spec. Don't skim. The "Decisions baked in" panel up top is your guardrails.
-2. The fork's `apps/studio/README.md` — confirms the build commands actually used by this codebase (the spec assumes `yarn`, but verify).
+2. `CLAUDE.md` at repo root — authoritative list of build, test, and lint commands for this fork. The PRD's gate stack is paraphrased; treat `CLAUDE.md` as the source of truth if they disagree.
 
 ## Operating rules
 
 - **One task at a time.** Don't merge tasks, don't skip ahead. The PRD ordering is intentional.
 - **One logical commit per task.** Conventional Commits. `chore(cleanse): ...`, `feat(sf): ...`, `refactor(connection): ...`.
 - **Push only to `feat/soql-manager-phase-1-cleanse` (Phase 1) or `feat/soql-manager-phase-2-poc` (Phase 2).** Never to `main`. Never force-push.
-- **Validate after every meaningful edit:** `yarn lint --quiet` → `yarn typecheck` → `yarn test --silent` (if exists) → `yarn build` only at task end. Stop on the first failure.
+- **Validate after every meaningful edit** (real script names, run from repo root):
+  - `yarn all:lint` — ESLint across studio + sqltools + shared.
+  - `yarn test:unit` — Jest unit tests (studio + ui-kit).
+  - `yarn bks:build` — full Electron bundle. Run only at task end, not after every edit.
+  - There is no `typecheck` script. esbuild and Vite strip TypeScript types without checking. If a task needs type verification, run `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json` ad-hoc and note it in the journal.
+  - Stop on the first failure.
 - **If a path in the PRD doesn't exist in the actual tree, do not invent.** Run `rg -l <hint>` to find the equivalent, update the PRD via PR, then proceed.
 
 ## Hard halt conditions — stop and wait for a human
@@ -34,8 +39,8 @@ You must halt and wait for explicit human approval (chat reply, commit comment, 
 
 Halt and write `docs/blockers/<utc-timestamp>.md` with the error and last 3 attempts if any of these fire:
 
-- Edited the same file 3+ times trying to make typecheck pass.
-- `yarn install` fails with a peer-dep conflict. **Do not** add `resolutions` reflexively.
+- Edited the same file 3+ times trying to make lint or `tsc --noEmit` pass.
+- `yarn install` fails with a peer-dep conflict. **Do not** add *new* entries to root `resolutions`. (Two pre-existing entries — `cpu-features`, `**/axios` — are inherited from upstream and stay.)
 - An OAuth round-trip fails with a non-2xx from Salesforce. Capture the full body. Do not retry blindly.
 - `better-sqlite3` shows up on a delete candidate list. Stop — the spec explicitly preserves it.
 - Any task in the PRD has a "Done when" criterion you can't satisfy after one honest attempt.
@@ -53,11 +58,11 @@ Halt and write `docs/blockers/<utc-timestamp>.md` with the error and last 3 atte
 
 ## Definition of done for the run
 
-- `phase-1-cleanse-complete` tag pushed, all four `yarn` gates green on the cleansed tree.
+- `phase-1-cleanse-complete` tag pushed, gate stack (`yarn all:lint`, `yarn test:unit`, `yarn bks:build`) green on the cleansed tree.
 - `phase-2-poc-complete` tag pushed, manual acceptance script (`docs/poc-acceptance.md`) passes end-to-end against a real dev org.
 - `docs/loop-journal/` populated with one entry per task.
 - `docs/poc-deferred.md` lists everything POC explicitly didn't build.
-- No orphaned skipped tests. No `resolutions` overrides. No commits to `main`.
+- No orphaned skipped tests. No *new* `resolutions` overrides beyond the two inherited from upstream. No commits to `main`.
 
 ## Reporting cadence
 
