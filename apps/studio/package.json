@@ -156,7 +156,7 @@
     "vuex-persist": "^2.0.1",
     "ws": "^8.18.3",
     "xel": "beekeeper-studio/xel",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "xlsx": "file:../../.yarn/packages/xlsx-stub",
     "yargs-parser": "^21.0.0"
   },
   "devDependencies": {
