@@ -59,7 +59,7 @@ async function createUtilityProcess() {
     {
       env: { ...process.env, ...args },
       stdio: ['ignore', 'inherit', 'inherit'],
-      serviceName: 'BeekeeperUtility'
+      serviceName: 'SoqlManagerUtility'
     }
   );
 

@@ -22,7 +22,7 @@ Drive `SOQL_MANAGER_PRD.md` to completion, one task at a time, in order. Phase 1
   - `yarn all:lint` — ESLint across studio + sqltools + shared.
   - `yarn test:unit` — Jest unit tests (studio + ui-kit).
   - `yarn bks:build` — full Electron bundle. Run only at task end, not after every edit.
-  - There is no `typecheck` script. esbuild and Vite strip TypeScript types without checking. If a task needs type verification, run `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json` ad-hoc and note it in the journal.
+  - There is no `typecheck` script. esbuild and Vite strip TypeScript types without checking. If a task needs type verification, run `yarn workspace soql-manager tsc --noEmit -p tsconfig.json` ad-hoc and note it in the journal.
   - Stop on the first failure.
 - **If a path in the PRD doesn't exist in the actual tree, do not invent.** Run `rg -l <hint>` to find the equivalent, update the PRD via PR, then proceed.
 

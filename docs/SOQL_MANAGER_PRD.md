@@ -158,17 +158,17 @@ The Ralph loop should not start work until these are in place. If any are missin
 - `cdn.sheetjs.com` — `xlsx@0.20.3` tarball. Worked around in this fork by stubbing `xlsx` (see `.yarn/packages/xlsx-stub/`); slated for removal alongside the import/export call sites in Task 1.3.
 - `www.electronjs.org` and `artifacts.electronjs.org` — Electron Node-API headers used by `electron-rebuild` during postinstall to rebuild native modules (`better-sqlite3`, `kerberos`, `mongodb-client-encryption`, `os-dns-native`) against Electron's Node ABI.
 
-The Electron headers cannot be sourced from `github.com/electron/electron/releases` (only chromedriver, electron binaries, and libcxx headers are published there). In a sandbox without those hosts allowlisted, run install with `--ignore-scripts` and accept a **reduced gate stack** for Phase 1: `yarn all:lint`, `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json`, and `yarn bks:build` still apply; **`yarn test:unit` is deferred to the cloud→local handoff at the Phase 1 / Phase 2 boundary** because Jest runs under Electron and needs Electron-ABI native module builds.
+The Electron headers cannot be sourced from `github.com/electron/electron/releases` (only chromedriver, electron binaries, and libcxx headers are published there). In a sandbox without those hosts allowlisted, run install with `--ignore-scripts` and accept a **reduced gate stack** for Phase 1: `yarn all:lint`, `yarn workspace soql-manager tsc --noEmit -p tsconfig.json`, and `yarn bks:build` still apply; **`yarn test:unit` is deferred to the cloud→local handoff at the Phase 1 / Phase 2 boundary** because Jest runs under Electron and needs Electron-ABI native module builds.
 
 This is honest about the gate-gap: Phase 1 is overwhelmingly deletions, so lint + tsc + build catch most regressions a deletion-driven phase introduces. Test coverage rejoins the gate stack when local — Phase 2 was already specced as local-recommended for OAuth reasons.
 
 **Phase exit criteria (all must hold), all run from repo root:**
 
 - `yarn install` clean. (Locally, no flags. In `cloud_default` sandbox, `yarn install --ignore-scripts` per the cloud caveat above.)
-- `yarn workspace beekeeper-studio lint` exits 0. (Use the workspace command directly; `yarn all:lint` references the missing `sqltools` workspace and `shared/` glob and fails. Note: lint coverage is currently zero — see `docs/build-commands.md` "Known issues".)
-- `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json` exits 0 **on cleansed code paths**. Baseline upstream HEAD has 274 pre-existing errors mostly in DB-driver files that Phase 1 deletes. Re-enable as a hard gate at the end of Phase 1, after the cleanse files are gone.
+- `yarn workspace soql-manager lint` exits 0. (Use the workspace command directly; `yarn all:lint` references the missing `sqltools` workspace and `shared/` glob and fails. Note: lint coverage is currently zero — see `docs/build-commands.md` "Known issues".)
+- `yarn workspace soql-manager tsc --noEmit -p tsconfig.json` exits 0 **on cleansed code paths**. Baseline upstream HEAD has 274 pre-existing errors mostly in DB-driver files that Phase 1 deletes. Re-enable as a hard gate at the end of Phase 1, after the cleanse files are gone.
 - `yarn test:unit` exits 0 **(local only; deferred in cloud per cloud caveat)**.
-- `yarn bks:build` produces an Electron bundle **(local only; deferred in cloud per cloud caveat)**. Cloud equivalent: `yarn lib:build` + `yarn workspace beekeeper-studio build` (static compile only).
+- `yarn bks:build` produces an Electron bundle **(local only; deferred in cloud per cloud caveat)**. Cloud equivalent: `yarn lib:build` + `yarn workspace soql-manager build` (static compile only).
 - App launches; connection manager dialog opens but offers no working connection types yet (or offers a stub "Salesforce" entry that errors gracefully).
 - No references remain to: `pg`, `mysql`, `mysql2`, `sqlite3`, `mariadb`, `mssql`, `tedious`, `oracledb`, `cassandra-driver`, `bigquery`, `redis`, `mongodb`, `cockroachdb`, or any DB-dialect SQL parser. Verify with `rg` after each removal.
 - **`better-sqlite3` is preserved** — it powers Beekeeper's own internal app DB (saved-connections store), which we are keeping.
@@ -184,7 +184,7 @@ This is honest about the gate-gap: Phase 1 is overwhelmingly deletions, so lint 
 
 **Action:**
 
-- Run `yarn install` and the full validation gate (`yarn all:lint`, `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json`, `yarn test:unit`, `yarn bks:build`) on the fork's `main` *before* creating the working branch. The loop must confirm the fork builds clean as-is. If it doesn't, halt — we don't want to spend hours chasing a "regression" that was already broken.
+- Run `yarn install` and the full validation gate (`yarn all:lint`, `yarn workspace soql-manager tsc --noEmit -p tsconfig.json`, `yarn test:unit`, `yarn bks:build`) on the fork's `main` *before* creating the working branch. The loop must confirm the fork builds clean as-is. If it doesn't, halt — we don't want to spend hours chasing a "regression" that was already broken.
 - Also write `docs/build-commands.md` capturing the exact gate commands the loop will use for the rest of the run, so future tasks don't paraphrase from this PRD and drift.
 - Then create `feat/soql-manager-phase-1-cleanse` and proceed.
 
@@ -318,7 +318,7 @@ appId: "io.soqlmanager.app"
 ```bash
 yarn install
 yarn all:lint
-yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json   # ad-hoc type gate; no typecheck script exists
+yarn workspace soql-manager tsc --noEmit -p tsconfig.json   # ad-hoc type gate; no typecheck script exists
 yarn test:unit
 yarn bks:build
 ```
@@ -553,7 +553,7 @@ export type SfAuthError =
 
 ```bash
 yarn all:lint
-yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json
+yarn workspace soql-manager tsc --noEmit -p tsconfig.json
 yarn test:unit
 yarn bks:build
 yarn bks:dev                 # for manual smoke
@@ -583,7 +583,7 @@ After every meaningful edit, the loop should run, in order (from repo root), and
 
 ```bash
 yarn all:lint
-yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json   # ad-hoc type gate; no typecheck script exists
+yarn workspace soql-manager tsc --noEmit -p tsconfig.json   # ad-hoc type gate; no typecheck script exists
 yarn test:unit                                                  # studio + ui-kit Jest suites
 yarn bks:build                                                  # full build only at task end, not every edit
 ```

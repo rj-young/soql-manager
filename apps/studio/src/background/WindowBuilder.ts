@@ -46,6 +46,7 @@ class BeekeeperWindow {
       ...this.getWindowPosition(settings),
       minWidth: 800,
       minHeight: 600,
+      title: "SOQL Manager",
       backgroundColor: dark ? "#252525" : '#ffffff',
       titleBarStyle,
       frame: false,
