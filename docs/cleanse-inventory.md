@@ -1,8 +1,22 @@
 # Cleanse inventory — Phase 1 kill list
 
-**Status:** Draft, awaiting human approval. Hard gate per `RALPH_LOOP_BRIEF.md` — Task 1.2 does not begin until this list is signed off.
+**Status:** Approved at Task 1.1 review (2026-05-07). Task 1.2 may proceed.
 **Date:** 2026-05-07
 **Branch:** `claude/review-prd-ralph-docs-eyWub`
+
+## Task 1.1 review — dispositions changed from initial draft
+
+| Item | Initial | Approved |
+|---|---|---|
+| `sql-formatter`, `sql-query-identifier` | Refactor → Delete (tentative) | **Delete** (confirmed) |
+| `apps/studio/src/lib/db/tunnel.ts` | Refactor (verify) | **Delete** |
+| `apps/studio/src/lib/ssh/` | Refactor (verify) | **Delete** |
+| `apps/studio/src/common/appdb/models/CloudCredential.ts` | ⚠️ Skip / verify | **Delete** |
+| `apps/studio/src/store/modules/CredentialsModule.ts` | ⚠️ Skip | **Delete** |
+| `apps/studio/src/lib/cloud/` (entire directory) | ⚠️ Verify-then-keep | **Delete** |
+| `apps/studio/src/common/appdb/models/installation_id.ts` | Keep (model); telemetry call sites delete | Confirmed (no change) |
+| `apps/studio/src/common/appdb/models/token_cache.ts` | Keep (decision deferred to Task 2.2) | **Keep — reused for SF tokens** (architectural decision locked, see PRD §2.2 v0.4) |
+| PRD Task 1.4 per-dialect-migration bullet | Active | **Dropped** (path doesn't exist; appdb migrations are schema-only) |
 
 ## Scope and method
 
@@ -184,7 +198,7 @@ Per-dialect dump/restore scripts. SF has no `pg_dump` analog; the Bulk API is a 
 | `index.ts` | Refactor | Module barrel. Strip exports of deleted clients. |
 | `models.ts` | Refactor | Shared row / cell / cursor types. Most survive; SF-specific types added in 2.2. |
 | `serverTypes.ts`, `backendTypes.ts`, `types.ts` | Refactor | Shared connection-type unions. Replace with `'salesforce'` in Task 1.5. |
-| `tunnel.ts` | **Refactor** (carefully) | SSH tunnel for DB connections. SF doesn't need it. Removable, but verify nothing else (e.g. proxy support) reuses it before deletion. List as Refactor pending verification. |
+| `tunnel.ts` | **Delete** | SSH tunnel for DB connections. Confirmed not needed for Phase 1.1 review — SF over OAuth doesn't tunnel, no other reuse. |
 | `serialization/transcoders.ts` | Keep | Cell-value serialization. Reusable for SF field values. |
 | `sql_tools.ts` | Delete | SQL-specific helpers (statement splitting etc.). |
 | `BaseCommandClient.ts`, `CommandClient.ts` | Refactor | Command-channel base classes. Reusable for SF; rename. |
@@ -203,7 +217,7 @@ This is the encrypted local app DB. **Almost entirely keep**, with one model ref
 | `models/saved_connection.ts` | **Refactor** | Add `myDomainUrl`, `instanceUrl`, `accessToken`, `refreshToken`, `tokenIssuedAt`, `userId`, `orgId`. Replace the dialect enum with `'salesforce'`. Done in Task 2.2. |
 | `models/used_connection.ts` | Keep | Connection history. SF connections logged here. |
 | `models/CloseTab.ts`, `OpenTab.ts` | Keep | Tab persistence; shape is generic. |
-| `models/CloudCredential.ts` | ⚠️ **Skip / verify** | Beekeeper Cloud workspace creds. May be Ultimate-only or community-shared. Flag; don't touch in Phase 1. |
+| `models/CloudCredential.ts` | **Delete** | Beekeeper Cloud workspace creds. Confirmed not in scope for SOQL Manager (Task 1.1 review — "we won't use it"). |
 | `models/EncryptedPluginData.ts`, `models/PluginData.ts` | Keep | Plugin system state. |
 | `models/HiddenEntity.ts`, `HiddenSchema.ts` | Refactor | Currently hides tables/schemas. Reusable for hiding sObjects. Same shape, rename in 1.5. |
 | `models/LicenseKey.ts` | ⚠️ **Skip** | Beekeeper Ultimate license. Per PRD anti-goal §4 — flag, do not touch. |
@@ -211,7 +225,7 @@ This is the encrypted local app DB. **Almost entirely keep**, with one model ref
 | `models/QueryFolder.ts`, `favorite_query.ts`, `used_query.ts` | Keep | Query history / saved queries. SOQL queries persist here. |
 | `models/FormatterPreset.ts` | **Delete** | SQL formatter presets. No SF analog. |
 | `models/installation_id.ts` | Keep | Telemetry install ID — but telemetry is stripped per §5; see telemetry section below. The model itself can stay (it's just an ID); call sites that use it for analytics go. |
-| `models/token_cache.ts` | Keep | Already an OAuth token cache (used for Azure / Cloud). Pattern reusable for SF tokens — coordinate with Task 2.2 to decide whether to extend `saved_connection` or use `token_cache`. |
+| `models/token_cache.ts` | **Keep — reused for SF tokens** | Generic OAuth token cache (`homeId`, `cache`, `name` — both encrypted-string columns). Per Task 1.1 review, SF `accessToken` / `refreshToken` / `tokenIssuedAt` are stored as an encrypted JSON blob in `cache`, keyed by `saved_connection.id`. Non-secret post-auth metadata (`instanceUrl`, `userId`, `orgId`) goes on `saved_connection`. Lock this in via the PRD §2.2 amendment. |
 | `models/user_setting.ts` | Keep | App preferences. |
 | `models/application_entity.ts`, `models/base.ts` | Keep | Base classes for TypeORM models. |
 | `transformers/Transformers.ts` | Keep | TypeORM column transformers (encryption helper lives here — reuse for SF tokens per Task 2.2). |
@@ -236,7 +250,7 @@ The `apps/studio/src/migration/ultimate/` subdirectory contains Ultimate-specifi
 
 | File | Decision | Why |
 |---|---|---|
-| `CredentialsModule.ts` | ⚠️ Skip | Cloud workspace creds. Likely Ultimate / community-shared boundary. Flag. |
+| `CredentialsModule.ts` | **Delete** | Cloud workspace creds Vuex module. Pairs with `CloudCredential.ts` — both deleted. |
 | `HideEntityModule.ts` | Refactor | Hide-sObject; same shape. |
 | `LicenseModule.ts` | ⚠️ Skip | Ultimate license state. |
 | `MenuBarModule.ts`, `PopupMenuModule.ts` | Keep | UI chrome. |
@@ -409,14 +423,14 @@ The `xlsx-stub` package under `.yarn/packages/xlsx-stub/` is removed once the ca
 
 | Path | Decision | Why |
 |---|---|---|
-| `cloud/` (`CloudClient.ts`, `ClientHelpers.ts`, `controllers/`) | ⚠️ **Verify then keep / skip** | Beekeeper Cloud workspace integration. Possibly Ultimate-adjacent. Inspect and default Keep — these are not SQL-specific. |
+| `cloud/` (`CloudClient.ts`, `ClientHelpers.ts`, `controllers/`) | **Delete** | Beekeeper Cloud workspace integration. Confirmed not in scope (Task 1.1 review). |
 | `data/` | Refactor | Data normalisation. Inspect during 1.4. |
 | `db/` | Covered above (sections 2 and 5). |
 | `editor/` (`CodeMirrorDefinitions.ts`, `CodeMirrorPlugins.ts`, `extensions/`, `languageData.ts`, `plugins/`, `utils.ts`, `vim.ts`) | **Keep all** | Editor frame. PRD-explicit keep. SQL language modes stay for now (will swap for SOQL in a later phase). |
 | `export/` (`export.ts`, `formats/`, `models.ts`, `index.ts`) | Delete | Export pipeline (CSV / JSON / Excel of query results). |
 | `import/` | Delete | Import pipeline. |
 | `errors.ts`, `events/`, `time/`, `uuid.ts`, `magic/`, `validation.js`, `converter.js`, `NativeWrapper.ts`, `TempFileManager.ts`, `UserProvidedEnum.ts`, `menu/`, `log/`, `utility/` | Keep | Generic utilities. |
-| `ssh/` | **Verify then refactor** | SSH tunnel infrastructure. Beekeeper used it for DB tunnels; SF over OAuth doesn't need it. Likely deletable once `db/tunnel.ts` is gone, but check for non-DB uses (e.g. SSH-via-bastion connection options). Default Refactor pending Phase 2 verification. |
+| `ssh/` | **Delete** | SSH tunnel infrastructure. Pairs with `db/tunnel.ts` (also Delete per Task 1.1 review). |
 | `license.ts` | ⚠️ Skip | Ultimate license helper. |
 | `typeorm_plugin.js` | Keep | Required by the appdb. |
 

@@ -2,17 +2,19 @@
 
 **Document type:** Product requirements + executable build spec
 **Audience:** Claude Code Ralph loop (primary), human reviewers (secondary)
-**Status:** Draft v0.3
-**Last updated:** 2026-05-06
+**Status:** Draft v0.4
+**Last updated:** 2026-05-07
 
-### Decisions baked in (v0.3)
+### Decisions baked in (v0.4)
 
 - Stack inherited from upstream Beekeeper Studio community edition (Electron + Vue + TypeScript). Fork already exists in user's GitHub org, forked from upstream `main`.
 - License: GPLv3 inherited from upstream. No commercial intent for SOQL Manager.
 - Salesforce client library: **jsforce**.
 - Auth: OAuth 2.0 Web Server flow. **My Domain URL** input field (handles production, sandbox, and scratch orgs uniformly).
 - Loopback redirect: hardcoded **port 1717** (matches `sf` CLI). On `EADDRINUSE`, **fail loudly** — no auto-fallback.
-- Credential storage: reuse Beekeeper's existing encrypted local app DB (extend SavedConnection schema). OS keychain hardening deferred.
+- Credential storage: reuse Beekeeper's existing encrypted local app DB. **Tokens stored in `token_cache` (encrypted JSON blob, reused as-is); non-secret post-auth metadata on `saved_connection`. Decision locked at Task 1.1 review v0.4 — see Task 2.2.** OS keychain hardening deferred.
+- Beekeeper Cloud workspace integration (`lib/cloud/`, `CloudCredential`, `CredentialsModule`) is **not** preserved (Task 1.1 review v0.4).
+- Beekeeper Ultimate license code (`license.ts`, `LicenseKey`, `LicenseModule`, `components/license/`, `migration/ultimate/`) is left untouched per anti-goal §4 — neither extended nor deleted.
 - Cleanse depth: **surgical** — gut data layer, keep UI shell + editor frame inert.
 - Telemetry: **stripped** in Phase 1. Crash reporting deferred.
 - POC entity tree: flat alphabetical sObject list, std/custom visually distinguishable. Long-term: feature parity with Beekeeper.
@@ -261,9 +263,9 @@ This is honest about the gate-gap: Phase 1 is overwhelmingly deletions, so lint 
 
 **Files (delete):**
 
-- Anything under `apps/studio/src/lib/db/migration/` that's per-dialect.
-- Per-dialect SQL parsers / formatters (keep the editor's CodeMirror SQL mode for now — that's a UI concern, not a data-layer concern; we'll swap it for a SOQL mode later).
-- Per-dialect schema introspection queries (`SHOW TABLES`, `pg_catalog.*`, etc.).
+- Per-dialect SQL parsers / formatters (`sql-formatter`, `sql-query-identifier` packages — Task 1.1 confirmed Delete). Keep the editor's CodeMirror SQL mode for now — that's a UI concern, not a data-layer concern; we'll swap it for a SOQL mode later.
+- Per-dialect schema introspection queries (`SHOW TABLES`, `pg_catalog.*`, etc.) wherever they survive in non-deleted files.
+- ~~`apps/studio/src/lib/db/migration/` per-dialect migrations~~ — **Dropped per Task 1.1 review.** That directory does not exist in this fork. App DB migrations live at `apps/studio/src/migration/` and are schema-only (not dialect-specific). They are append-only history and stay untouched; new SF migration lands on top in Task 2.2.
 
 **Done when:** `rg -i "pg_catalog|information_schema|sqlite_master|sys\\.tables" apps/studio/src` returns nothing.
 
@@ -352,28 +354,59 @@ yarn bks:build
 
 **Done when:** `import * as jsforce from 'jsforce'` typechecks in a scratch file that the loop then deletes.
 
-### Task 2.2 — Extend SavedConnection schema
+### Task 2.2 — Extend appdb schema for SF (saved_connection + token_cache)
+
+**Architecture (locked at Task 1.1 review v0.4):** secrets and metadata are stored in different tables.
+
+- `saved_connection` holds the user-entered connection definition + non-secret post-auth metadata. One row per saved org.
+- `token_cache` holds the encrypted tokens. Reused as-is — its existing schema (`homeId`, `cache`, `name`) is generic enough; SF tokens are serialised as a JSON blob into the `cache` column. One row per saved org, keyed by `saved_connection.id`.
 
 **Files:**
 
-- `apps/studio/src/common/appdb/models/SavedConnection.ts`
-- A new migration under `apps/studio/src/common/appdb/migration/` (match existing naming convention).
+- `apps/studio/src/common/appdb/models/saved_connection.ts` — extend.
+- `apps/studio/src/common/appdb/models/token_cache.ts` — keep as-is, add a thin SF-specific wrapper helper somewhere appropriate (e.g. `apps/studio/src/lib/sf/tokenStore.ts` created in this task).
+- A new migration file under `apps/studio/src/migration/` (match existing naming convention — `YYYYMMDD_<description>.js`).
 
-**New fields:**
+**Schema changes**
+
+`saved_connection` adds:
 
 | Field | Type | Notes |
 |---|---|---|
-| `myDomainUrl` | string | e.g. `https://acme-dev-ed.develop.my.salesforce.com` |
-| `instanceUrl` | string | populated post-auth from token response |
-| `accessToken` | string (encrypted) | short-lived |
-| `refreshToken` | string (encrypted) | long-lived |
-| `tokenIssuedAt` | number (unix ms) | for refresh logic |
-| `userId` | string | from token introspection |
-| `orgId` | string | from token introspection |
+| `myDomainUrl` | string | e.g. `https://acme-dev-ed.develop.my.salesforce.com`. Required. |
+| `instanceUrl` | string | Populated post-auth from token response. Nullable until first auth. |
+| `userId` | string | From token introspection. Nullable until first auth. |
+| `orgId` | string | From token introspection. Nullable until first auth. |
+| `tokenCacheId` | number (FK) | Foreign key to `token_cache.id`. Nullable until first auth (no tokens yet for save-without-auth). |
 
-**Done when:** Migration runs cleanly on a fresh install and on a dev install that already has the legacy schema.
+`token_cache` reused without schema changes. SF rows use:
 
-**Gotcha:** Tokens are sensitive. Reuse Beekeeper's existing encryption helper (find with `rg "encrypt|decrypt" apps/studio/src/common/appdb`). Do not invent a new crypto path.
+- `homeId` — set to `"sf:" + savedConnectionId` (encrypted via existing transformer).
+- `cache` — encrypted JSON blob `{ accessToken, refreshToken, tokenIssuedAt, signature?: string }`.
+- `name` — human-readable label like `"sf:" + orgId` (set post-auth; helpful for debugging).
+
+**Helper**: create `apps/studio/src/lib/sf/tokenStore.ts` with a small typed API:
+
+```typescript
+type SfTokenBlob = {
+  accessToken: string;
+  refreshToken: string;
+  tokenIssuedAt: number;  // unix ms
+  signature?: string;     // from Salesforce id_token if available
+};
+
+async function readTokens(savedConnectionId: number): Promise<SfTokenBlob | null>;
+async function writeTokens(savedConnectionId: number, tokens: SfTokenBlob): Promise<number>;  // returns tokenCacheId
+async function clearTokens(savedConnectionId: number): Promise<void>;
+```
+
+This keeps JSON-blob marshalling and the FK update in one place; callers (`SfConnectionManager`) never touch `token_cache` directly.
+
+**Done when:** Migration runs cleanly on a fresh install and on a dev install that already has the legacy schema. `tokenStore.ts` round-trips tokens via the existing `EncryptTransformer`. No new crypto path is introduced.
+
+**Gotcha:** Tokens are sensitive. Reuse Beekeeper's existing encryption helper at `apps/studio/src/common/appdb/transformers/Transformers.ts` (`EncryptTransformer`). Do not invent a new crypto path. Per-row encryption already covers `token_cache.homeId` and `token_cache.cache` — no double-encryption needed for the JSON blob.
+
+**Why this split rather than putting tokens on `saved_connection`:** keeps the rotating-state column out of the connection definition (cleaner audit / diff), reuses an existing encrypted-storage table without schema migration on its side, and makes it possible to clear tokens (logout) by deleting just the `token_cache` row without touching the user's saved connection.
 
 ### Task 2.3 — Connection dialog UI
 
