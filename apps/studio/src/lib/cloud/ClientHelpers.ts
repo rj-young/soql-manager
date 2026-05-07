@@ -1,41 +1,14 @@
-import { AxiosResponse } from 'axios';
-import _ from 'lodash';
-
-
-export interface CloudResponseBase {
-  code: number,
-  errors: [],
-  message: string | null,
-  friendlyError?: string,
-}
+// Minimal Cloud surface shim. The full Beekeeper Cloud client was removed in
+// Phase 1 cleanse (Task 1.1 review). LicenseModule (anti-goal §4: untouched
+// Ultimate code) still imports CloudError for instanceof checks; this stub
+// preserves the type so LicenseModule compiles, but no actual cloud calls
+// happen — license fetch always fails and falls through to community mode.
 
 export class CloudError extends Error {
-  public status: number
-  public errors: string[]
-  public userMessage: string
-
-  constructor(status: number, message?: string, errors?: any[]) {
-    const result = [`Cloud Error (${status}):`]
-    const errorStrings: string[] = errors ? errors.map((e) => {
-      return _.isString(e) ? e : e.message
-    }).filter(Boolean) : []
-    if (message) result.push(message)
-    if (errorStrings.length) result.push(...errorStrings)
-    super(result.join(" "))
+  status: number
+  constructor(message: string, status = 0) {
+    super(message)
+    this.name = 'CloudError'
     this.status = status
-    this.errors = errorStrings
-    this.userMessage = message || errorStrings[0] || `Server error (${status})`
   }
-}
-
-export function url(...parts: (string | number)[]) {
-  const res = parts.map((p) => p.toString()).join("/")
-  return res.startsWith('/') ? res : `/${res}`
-}
-
-// Accept any 2xx status as success. POST (create) returns 201, GET/PATCH return 200,
-// so checking for exactly 200 would incorrectly reject successful creates.
-export function res<T extends CloudResponseBase>(response: AxiosResponse < T >, key: string) {
-  if (response.status < 200 || response.status >= 300) throw new CloudError(response.status, response.data?.friendlyError || response.data?.message, response.data?.errors)
-  return response.data[key]
 }

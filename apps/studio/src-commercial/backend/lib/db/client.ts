@@ -1,62 +1,8 @@
 // Copyright (c) 2015 The SQLECTRON Team, 2020 Beekeeper Studio team
-import { ConnectionType, IDbConnectionDatabase } from "@/lib/db/types"
-import { MysqlClient } from '@/lib/db/clients/mysql';
-import { PostgresClient } from '@/lib/db/clients/postgresql';
-import { SQLServerClient } from '@/lib/db/clients/sqlserver';
-import { SqliteClient } from '@/lib/db/clients/sqlite';
-import { MariaDBClient } from '@/lib/db/clients/mariadb';
-import { TiDBClient } from '@/lib/db/clients/tidb';
-import { RedshiftClient } from '@/lib/db/clients/redshift';
-import { CockroachClient } from '@/lib/db/clients/cockroach';
-import { GreengageClient } from '@/lib/db/clients/greengage';
-import { BigQueryClient } from '@/lib/db/clients/bigquery';
+// SOQL Manager: factory throws NotImplemented for every connection type until
+// Phase 2 Task 2.4 wires SfClient.
+import { IDbConnectionDatabase } from "@/lib/db/types"
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { FirebirdClient } from "./clients/firebird";
-import { OracleClient } from "./clients/oracle";
-import { CassandraClient } from "./clients/cassandra";
-import { ScyllaDBClient } from "./clients/scylladb";
-import { LibSQLClient } from "./clients/libsql";
-import { DuckDBClient } from "./clients/duckdb";
-import { ClickHouseClient } from "./clients/clickhouse";
-import { MongoDBClient } from "./clients/mongodb";
-import { SQLAnywhereClient } from "./clients/anywhere";
-import { TrinoClient } from "./clients/trino";
-import { SurrealDBClient } from "./clients/surrealdb";
-import { RedisClient } from '@/lib/db/clients/redis';
-import { BedrockClient } from '@/lib/db/clients/bedrock';
-
-const clients = new Map<ConnectionType, any>([
-  ['mysql', MysqlClient],
-  ['postgresql', PostgresClient],
-  ['sqlserver', SQLServerClient],
-  ['sqlite', SqliteClient],
-  ['redshift', RedshiftClient],
-  ['mariadb', MariaDBClient],
-  ['tidb', TiDBClient],
-  ['cockroachdb', CockroachClient],
-  ['greengage', GreengageClient],
-  ['bigquery', BigQueryClient],
-  ['firebird', FirebirdClient],
-  ['oracle', OracleClient],
-  ['cassandra', CassandraClient],
-  ['scylladb', ScyllaDBClient],
-  ['libsql', LibSQLClient],
-  ['duckdb', DuckDBClient],
-  ['clickhouse', ClickHouseClient],
-  ['mongodb', MongoDBClient],
-  ['sqlanywhere', SQLAnywhereClient],
-  ['trino', TrinoClient],
-  ['surrealdb', SurrealDBClient],
-  ['redis', RedisClient],
-  ['bedrock', BedrockClient]
-], );
-
-
-class FriendlyErrorClient {
-  constructor() {
-    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src-commercial/backend/lib/db/client.ts")
-  }
-}
 
 export class ClientError extends Error {
   helpLink = null
@@ -66,10 +12,15 @@ export class ClientError extends Error {
   }
 }
 
-export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase ) {
-  /**
-   * Database public API
-   */
-  const client = clients.get(server.config.client) || FriendlyErrorClient;
-  return new client(server, database);
+class NotImplementedClient {
+  constructor() {
+    throw new Error(
+      "No connection client wired yet. Salesforce client lands in Phase 2 Task 2.4. " +
+      "See PRD section 8."
+    )
+  }
+}
+
+export function createConnection(_server: IDbConnectionServer, _database: IDbConnectionDatabase) {
+  return new NotImplementedClient();
 }

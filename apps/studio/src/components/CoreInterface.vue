@@ -47,9 +47,7 @@
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
     />
-    <ExportManager />
     <lost-connection-modal />
-    <rename-database-element-modal />
   </div>
 </template>
 
@@ -60,14 +58,12 @@
   import GlobalSidebar from './sidebar/GlobalSidebar.vue'
   import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
-  import ExportManager from './export/ExportManager.vue'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import LostConnectionModal from './LostConnectionModal.vue'
   import GlobalStatusBar from './GlobalStatusBar.vue'
   import Vue from 'vue'
-  import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
   import PrivacyBanner from '@/components/PrivacyBanner.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
@@ -77,11 +73,9 @@
       CoreSidebar,
       CoreTabs,
       Sidebar,
-      ExportManager,
       QuickSearch,
       ProgressBar,
       LostConnectionModal,
-      RenameDatabaseElementModal,
       SecondarySidebar,
       GlobalStatusBar,
       GlobalSidebar,

@@ -2,12 +2,33 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { Routine, SupportedFeatures, TableOrView } from "../lib/db/models"
+import { Routine, RoutineTypeNames, SupportedFeatures, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/serverTypes'
 import { CoreTab, EntityFilter } from './models'
-import { entityFilter } from '../lib/db/sql_tools'
+import _ from 'lodash'
+
+// Inlined from the deleted lib/db/sql_tools.ts (Task 1.3). Filters the table /
+// view / routine list shown in the entity tree.
+function entityFilter(rawTables: any[], allFilters: EntityFilter) {
+  const tables = rawTables.filter((table) => {
+    return (table.entityType === 'table' && allFilters.showTables &&
+      ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
+      (table.entityType === 'view' && allFilters.showViews) ||
+      (table.entityType === 'materialized-view' && allFilters.showViews) ||
+      (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)
+  })
+  const { filterQuery } = allFilters
+  if (!filterQuery) return tables
+  const startsWithFilter = _(tables)
+    .filter((item) => _.startsWith(item.name.toLowerCase(), filterQuery.toLowerCase()))
+    .value()
+  const containsFilter = _(tables)
+    .difference(startsWithFilter)
+    .filter((item) => item.name.toLowerCase().includes(filterQuery.toLowerCase()))
+    .value()
+  return _.concat(startsWithFilter, containsFilter)
+}
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
 import RawLog from '@bksLogger'
@@ -26,12 +47,7 @@ import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityCo
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
 import { LicenseModule } from './modules/LicenseModule'
-import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { UserEnumsModule } from './modules/UserEnumsModule'
-import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
-import ImportStoreModule from './modules/imports/ImportStoreModule'
-import { BackupModule } from './modules/backup/BackupModule'
-import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
@@ -117,19 +133,14 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store<State>({
   modules: {
-    exports: ExportStoreModule,
     settings: SettingStoreModule,
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
     licenses: LicenseModule,
-    credentials: CredentialsModule,
     hideEntities: HideEntityModule,
     userEnums: UserEnumsModule,
     pinnedConnections: PinConnectionModule,
-    multiTableExports: MultiTableExportStoreModule,
-    imports: ImportStoreModule,
-    backups: BackupModule,
     sidebar: SidebarModule,
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
@@ -179,20 +190,15 @@ const store = new Vuex.Store<State>({
     friendlyConnectionType(state) {
       return ConnectionTypes.find((ct) => ct.value == state.connectionType)?.name ?? "Default Connection"
     },
-    workspace(state, getters): IWorkspace {
-      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
-
-      const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
-
-      if (!result) return LocalWorkspace
-      return result.workspace
+    workspace(_state, _getters): IWorkspace {
+      // Beekeeper Cloud workspaces removed in Phase 1 cleanse (Task 1.1 review).
+      return LocalWorkspace
     },
-    isCloud(state: State) {
-      return state.workspaceId !== LocalWorkspace.id
+    isCloud(_state: State) {
+      return false
     },
-    workspaceEmail(_state: State, getters): string | null {
-      return getters.cloudClient?.options?.email || null
+    workspaceEmail(_state: State, _getters): string | null {
+      return null
     },
     pollError(state) {
       return DataModules.map((module) => {
@@ -200,12 +206,9 @@ const store = new Vuex.Store<State>({
         return pollError || null
       }).find((e) => !!e)
     },
-    cloudClient(state: State, getters): CloudClient | null {
-      if (state.workspaceId === LocalWorkspace.id) return null
-
-      const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
-      if (!result) return null
+    cloudClient(_state: State, _getters): null {
+      // Cloud client gone with Beekeeper Cloud workspaces.
+      return null
       return result.client.cloneWithWorkspace(result.workspace.id)
 
     },

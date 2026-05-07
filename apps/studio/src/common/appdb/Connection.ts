@@ -6,7 +6,6 @@ import { FavoriteQuery } from './models/favorite_query'
 import { UserSetting } from './models/user_setting'
 import { LoggerOptions } from 'typeorm/logger/LoggerOptions'
 import { PinnedEntity } from "./models/PinnedEntity"
-import { CloudCredential } from "./models/CloudCredential"
 import { OpenTab } from "./models/OpenTab"
 import { LicenseKey } from "./models/LicenseKey"
 import { HiddenEntity } from "./models/HiddenEntity"
@@ -17,7 +16,6 @@ import { InstallationId } from "./models/installation_id"
 import { UserPin } from "./models/UserPin"
 import { PluginData } from "./models/PluginData";
 import { EncryptedPluginData } from "./models/EncryptedPluginData"
-import { FormatterPreset } from "./models/FormatterPreset"
 import { QueryFolder } from "./models/QueryFolder"
 import { ConnectionFolder } from "./models/ConnectionFolder"
 
@@ -28,7 +26,6 @@ const models = [
   FavoriteQuery,
   UserSetting,
   PinnedEntity,
-  CloudCredential,
   OpenTab,
   LicenseKey,
   HiddenEntity,
@@ -39,7 +36,6 @@ const models = [
   UserPin,
   PluginData,
   EncryptedPluginData,
-  FormatterPreset,
   QueryFolder,
   ConnectionFolder,
 ]

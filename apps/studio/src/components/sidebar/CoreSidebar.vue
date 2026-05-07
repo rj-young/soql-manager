@@ -12,9 +12,6 @@
           v-if="connectionType === 'surrealdb'"
           @namespaceSelected="namespaceSelected"
         />
-        <database-dropdown
-          @databaseSelected="databaseSelected"
-        />
         <table-list />
       </div>
 
@@ -46,7 +43,6 @@
   import TableList from './core/TableList.vue'
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
-  import DatabaseDropdown from './core/DatabaseDropdown.vue'
   import SurrealNamespaceDropdown from './core/SurrealNamespaceDropdown.vue'
 
   import { mapState, mapGetters, mapActions } from 'vuex'
@@ -55,7 +51,7 @@
   const log = rawLog.scope('core-sidebar')
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, FavoriteList, SurrealNamespaceDropdown},
+    components: { TableList, HistoryList, FavoriteList, SurrealNamespaceDropdown},
     data() {
       return {
         tableLoadError: null,

@@ -2,7 +2,7 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
-import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery, TransportFormatterPreset } from "@/common/transport";
+import { Transport, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery } from "@/common/transport";
 import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
@@ -10,7 +10,6 @@ import { UsedQuery } from "@/common/appdb/models/used_query";
 import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
-import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
 import { QueryFolder } from "@/common/appdb/models/QueryFolder";
 import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
 import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
@@ -21,7 +20,6 @@ import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity"
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
-import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
@@ -167,10 +165,8 @@ export const AppDbHandlers = {
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
-  ...handlersFor<TransportFormatterPreset>('formatterPreset', FormatterPreset),
   ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
-  ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),

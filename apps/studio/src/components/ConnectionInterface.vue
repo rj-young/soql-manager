@@ -237,26 +237,8 @@
 
 <script lang="ts">
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
-import MysqlForm from './connection/MysqlForm.vue'
-import BedrockForm from './connection/BedrockForm.vue'
-import PostgresForm from './connection/PostgresForm.vue'
-import RedshiftForm from './connection/RedshiftForm.vue'
 import Sidebar from './common/Sidebar.vue'
-import SqliteForm from './connection/SqliteForm.vue'
-import SqlServerForm from './connection/SqlServerForm.vue'
 import SaveConnectionForm from './connection/SaveConnectionForm.vue'
-import BigQueryForm from './connection/BigQueryForm.vue'
-import FirebirdForm from './connection/FirebirdForm.vue'
-import ClickHouseForm from './connection/ClickHouseForm.vue'
-import LibSQLForm from './connection/LibSQLForm.vue'
-import CassandraForm from './connection/CassandraForm.vue'
-import OracleForm from './connection/OracleForm.vue'
-import MongoDbForm from './connection/MongoDBForm.vue'
-import DuckDbForm from './connection/DuckDBForm.vue'
-import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
-import TrinoForm from './connection/TrinoForm.vue'
-import SurrealDbForm from './connection/SurrealDBForm.vue'
-import RedisForm from './connection/RedisForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -280,7 +262,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner
+  components: { ConnectionSidebar, Sidebar, SaveConnectionForm, ImportButton, ErrorAlert, UpsellContent, LoadingSsoModal: LoadingSSOModal, ContentPlaceholderHeading, PrivacyBanner
   },
 
   data() {

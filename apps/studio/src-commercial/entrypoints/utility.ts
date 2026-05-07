@@ -7,21 +7,15 @@ import { MessagePortMain } from 'electron';
 import ORMConnection from '@/common/appdb/Connection'
 import platformInfo from '@/common/platform_info';
 import { AppDbHandlers } from '@/handlers/appDbHandlers';
-import { ConnHandlers } from '../backend/handlers/connHandlers';
 import { FileHandlers } from '@/handlers/fileHandlers';
 import { GeneratorHandlers } from '@/handlers/generatorHandlers';
 import { Handlers } from '../backend/handlers/handlers';
 import { newState, removeState, state } from '@/handlers/handlerState';
 import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
-import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
-import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
-import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
-import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
-import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
@@ -73,14 +67,9 @@ interface Reply {
 }
 
 export const handlers: Handlers = {
-  ...ConnHandlers,
   ...QueryHandlers,
   ...GeneratorHandlers,
-  ...ExportHandlers,
-  ...ImportHandlers,
   ...AppDbHandlers,
-  ...BackupHandlers,
-  ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
   ...TempHandlers,
@@ -89,7 +78,6 @@ export const handlers: Handlers = {
   ...DriverDepHandlers(driverDepManager),
   ...TabHistoryHandlers,
   ...LockHandlers,
-  ...FormatterPresetHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 

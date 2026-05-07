@@ -1,7 +1,5 @@
 <template>
   <div class="sidebar-wrap row">
-    <workspace-sidebar />
-
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
       <div class="btn-wrap quick-connect">
@@ -342,7 +340,6 @@
 <script>
 import _ from 'lodash'
 import { SmartLocalStorage } from '@/common/LocalStorage'
-import WorkspaceSidebar from './WorkspaceSidebar.vue'
 import { mapState, mapGetters, mapActions } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
@@ -364,7 +361,6 @@ export default {
     ErrorAlert,
     SidebarFolder,
     SidebarSortButtons,
-    WorkspaceSidebar,
     Draggable
   },
   props: ['selectedConfig'],

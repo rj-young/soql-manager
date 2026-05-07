@@ -86,12 +86,6 @@
           :tab-id="tab.id"
           @update-tab="updateTab"
          />
-        <Shell
-          v-if="tab.tabType === 'shell'"
-          :active="activeTab?.id === tab.id"
-          :tab="tab"
-          :tab-id="tab.id"
-        />
         <PluginBase
           v-if="tab.tabType === 'plugin-base'"
           :tab="tab"
@@ -117,58 +111,6 @@
             />
           </template>
         </tab-with-table>
-        <tab-with-table
-          v-if="tab.tabType === 'table-properties'"
-          :tab="tab"
-          @close="close"
-        >
-          <template v-slot:default="slotProps">
-            <TableProperties
-              :active="activeTab?.id === tab.id"
-              :tab="tab"
-              :tab-id="tab.id"
-              :table="slotProps.table"
-            />
-          </template>
-        </tab-with-table>
-        <TableBuilder
-          v-if="tab.tabType === 'table-builder'"
-          :active="activeTab?.id === tab.id"
-          :tab="tab"
-          :tab-id="tab.id"
-        />
-        <ImportExportDatabase
-          v-if="tab.tabType === 'import-export-database'"
-          :schema="tab.schemaName"
-          :tab="tab"
-          :active="activeTab?.id === tab.id"
-          @close="close"
-        />
-        <DatabaseBackup
-          v-if="tab.tabType === 'backup'"
-          :connection="connection"
-          :is-restore="false"
-          :active="activeTab?.id === tab.id"
-          :tab="tab"
-          @close="close"
-        />
-        <DatabaseBackup
-          v-if="tab.tabType === 'restore'"
-          :connection="connection"
-          :is-restore="true"
-          :active="activeTab?.id === tab.id"
-          :tab="tab"
-          @close="close"
-        />
-        <ImportTable
-          v-if="tab.tabType === 'import-table'"
-          :tab="tab"
-          :schema="tab.schemaName"
-          :table="tab.tableName"
-          :active="activeTab?.id === tab.id"
-          :connection="connection"
-          @close="close"
-        />
       </div>
     </div>
     <portal to="modals">
@@ -299,11 +241,6 @@ import QueryEditor from './TabQueryEditor.vue'
 import Statusbar from './common/StatusBar.vue'
 import CoreTabHeader from './CoreTabHeader.vue'
 import TableTable from './tableview/TableTable.vue'
-import TableProperties from './TabTableProperties.vue'
-import TableBuilder from './TabTableBuilder.vue'
-import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
-import ImportTable from './TabImportTable.vue'
-import DatabaseBackup from './TabDatabaseBackup.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
@@ -322,8 +259,6 @@ import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
-import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
-import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
@@ -336,20 +271,13 @@ export default Vue.extend({
     QueryEditor,
     CoreTabHeader,
     TableTable,
-    TableProperties,
-    ImportExportDatabase,
-    ImportTable,
     Draggable,
     ShortcutHints,
-    TableBuilder,
     TabWithTable,
     TabIcon,
-    DatabaseBackup,
     PendingChangesButton,
     ConfirmationModal,
-    SqlFilesImportModal,
     CreateCollectionModal,
-    Shell,
     PluginShell,
     PluginBase,
   },
