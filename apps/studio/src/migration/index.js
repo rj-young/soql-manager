@@ -89,6 +89,7 @@ import addBastionAuth from './20260324_add_bastion_auth'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import dropLegacyDialectConnections from './20260507_drop_legacy_dialect_connections'
+import addSfConnectionColumns from './20260507_add_sf_connection_columns'
 
 import ultimate from './ultimate/index'
 
@@ -139,6 +140,7 @@ const realMigrations = [
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,
   dropLegacyDialectConnections,
+  addSfConnectionColumns,
 ]
 
 // fixtures require the models

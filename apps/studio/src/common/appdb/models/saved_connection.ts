@@ -195,6 +195,23 @@ export class DbConnectionBase extends ApplicationEntity {
   // oracle only.
   @Column({type: 'varchar', nullable: true})
   serviceName: Nullable<string> = null
+
+  // Salesforce (Phase 2 Task 2.2). Tokens themselves live in token_cache;
+  // these columns hold the user-entered URL plus non-secret post-auth metadata.
+  @Column({ type: 'varchar', nullable: true })
+  myDomainUrl: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true })
+  instanceUrl: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true })
+  userId: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true })
+  orgId: Nullable<string> = null
+
+  @Column({ type: 'integer', nullable: true })
+  tokenCacheId: Nullable<number> = null
 }
 
 @Entity({ name: 'saved_connection' })
