@@ -1,7 +1,7 @@
 {
   "name": "soql-manager-root",
   "version": "1.0.0",
-  "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
+  "repository": "git@github.com:rj-young/soql-manager.git",
   "author": "Matthew Rathbone <matthew.rathbone@gmail.com>",
   "license": "MIT",
   "private": true,

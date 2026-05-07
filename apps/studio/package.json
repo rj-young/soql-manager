@@ -121,7 +121,6 @@
     "vuex-persist": "^2.0.1",
     "ws": "^8.18.3",
     "xel": "beekeeper-studio/xel",
-    "xlsx": "file:../../.yarn/packages/xlsx-stub",
     "yargs-parser": "^21.0.0"
   },
   "devDependencies": {
@@ -196,7 +195,7 @@
     "> 1%",
     "last 2 versions"
   ],
-  "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
+  "repository": "git@github.com:rj-young/soql-manager.git",
   "resolutions": {
     "cpu-features": "file:./.yarn/packages/empty-package"
   }

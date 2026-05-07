@@ -148,9 +148,6 @@
         <x-menuitem @click.prevent="download('csv')">
           <x-label>Download as CSV</x-label>
         </x-menuitem>
-        <x-menuitem @click.prevent="download('xlsx')">
-          <x-label>Download as Excel</x-label>
-        </x-menuitem>
         <x-menuitem @click.prevent="download('json')">
           <x-label>Download as JSON</x-label>
         </x-menuitem>

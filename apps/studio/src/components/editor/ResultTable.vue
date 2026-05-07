@@ -71,7 +71,6 @@
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
-  import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
@@ -973,38 +972,6 @@ import { stringToTypedArray } from '@/common/utils'
              const newValue = JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  ");
              setFileContents(newValue, 'text/json');
           };
-        }
-
-        // Fix Issue #2863 replacing null values with empty string
-        if(format === 'xlsx'){
-          formatter = (rows, options, setFileContents) => {
-             const values = rows.map(row => row.columns.map(col => {
-               if(col.value === null){
-                 return '';
-               }
-
-               if(typeof col.value === 'object'){
-                 return JSON.stringify(col.value);
-               }
-
-               return col.value;
-              })
-            );
-
-             const ws = XLSX.utils.aoa_to_sheet(values);
-             const wb = XLSX.utils.book_new();
-
-             // sheet title cannot be more than 31 characters and sheet title cannot be 'history'
-             // source: https://support.microsoft.com/en-us/office/rename-a-worksheet-3f1f7148-ee83-404d-8ef0-9ff99fbad1f9
-             let sheetTitle = title.slice(0,31);
-             if (title.toLowerCase() === "history") {
-              sheetTitle = "history-sheet";
-             }
-
-             XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
-             const excel = XLSX.write(wb, { type: 'buffer' });
-             setFileContents(excel);
-          }
         }
 
         this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
