@@ -2,10 +2,10 @@
 
 **Document type:** Product requirements + executable build spec
 **Audience:** Claude Code Ralph loop (primary), human reviewers (secondary)
-**Status:** Draft v0.2
+**Status:** Draft v0.3
 **Last updated:** 2026-05-06
 
-### Decisions baked in (v0.2)
+### Decisions baked in (v0.3)
 
 - Stack inherited from upstream Beekeeper Studio community edition (Electron + Vue + TypeScript). Fork already exists in user's GitHub org, forked from upstream `main`.
 - License: GPLv3 inherited from upstream. No commercial intent for SOQL Manager.
@@ -149,14 +149,24 @@ The Ralph loop should not start work until these are in place. If any are missin
 
 ## 7. Phase 1 — SQL Code Cleanse
 
-**Execution environment:** Phase 1 is **cloud-friendly**. All work is deterministic, headless, terminal-driven (file deletions, dependency removal, lint/typecheck/build). No GUI required. Run in cloud sandbox or locally — both work. Recommended: cloud, to keep your local machine free.
+**Execution environment:** Phase 1 is **cloud-friendly *if* the sandbox has the right egress.** All work is deterministic, headless, terminal-driven (file deletions, dependency removal, lint/typecheck/build). No GUI required. Run in cloud sandbox or locally — both work in principle.
+
+**Cloud caveat (added v0.3 after empirical discovery):** Beekeeper's install pipeline reaches several hosts not on the default Claude Code on the web (`cloud_default`) egress allowlist:
+
+- `cdn.sheetjs.com` — `xlsx@0.20.3` tarball. Worked around in this fork by stubbing `xlsx` (see `.yarn/packages/xlsx-stub/`); slated for removal alongside the import/export call sites in Task 1.3.
+- `www.electronjs.org` and `artifacts.electronjs.org` — Electron Node-API headers used by `electron-rebuild` during postinstall to rebuild native modules (`better-sqlite3`, `kerberos`, `mongodb-client-encryption`, `os-dns-native`) against Electron's Node ABI.
+
+The Electron headers cannot be sourced from `github.com/electron/electron/releases` (only chromedriver, electron binaries, and libcxx headers are published there). In a sandbox without those hosts allowlisted, run install with `--ignore-scripts` and accept a **reduced gate stack** for Phase 1: `yarn all:lint`, `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json`, and `yarn bks:build` still apply; **`yarn test:unit` is deferred to the cloud→local handoff at the Phase 1 / Phase 2 boundary** because Jest runs under Electron and needs Electron-ABI native module builds.
+
+This is honest about the gate-gap: Phase 1 is overwhelmingly deletions, so lint + tsc + build catch most regressions a deletion-driven phase introduces. Test coverage rejoins the gate stack when local — Phase 2 was already specced as local-recommended for OAuth reasons.
 
 **Phase exit criteria (all must hold), all run from repo root:**
 
-- `yarn install` clean.
-- `yarn all:lint` exits 0.
-- `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json` exits 0. (No `typecheck` script exists; esbuild and Vite strip TypeScript without checking. Run `tsc --noEmit` ad-hoc as the type gate.)
-- `yarn bks:build` produces an Electron bundle.
+- `yarn install` clean. (Locally, no flags. In `cloud_default` sandbox, `yarn install --ignore-scripts` per the cloud caveat above.)
+- `yarn workspace beekeeper-studio lint` exits 0. (Use the workspace command directly; `yarn all:lint` references the missing `sqltools` workspace and `shared/` glob and fails. Note: lint coverage is currently zero — see `docs/build-commands.md` "Known issues".)
+- `yarn workspace beekeeper-studio tsc --noEmit -p tsconfig.json` exits 0 **on cleansed code paths**. Baseline upstream HEAD has 274 pre-existing errors mostly in DB-driver files that Phase 1 deletes. Re-enable as a hard gate at the end of Phase 1, after the cleanse files are gone.
+- `yarn test:unit` exits 0 **(local only; deferred in cloud per cloud caveat)**.
+- `yarn bks:build` produces an Electron bundle **(local only; deferred in cloud per cloud caveat)**. Cloud equivalent: `yarn lib:build` + `yarn workspace beekeeper-studio build` (static compile only).
 - App launches; connection manager dialog opens but offers no working connection types yet (or offers a stub "Salesforce" entry that errors gracefully).
 - No references remain to: `pg`, `mysql`, `mysql2`, `sqlite3`, `mariadb`, `mssql`, `tedious`, `oracledb`, `cassandra-driver`, `bigquery`, `redis`, `mongodb`, `cockroachdb`, or any DB-dialect SQL parser. Verify with `rg` after each removal.
 - **`better-sqlite3` is preserved** — it powers Beekeeper's own internal app DB (saved-connections store), which we are keeping.
