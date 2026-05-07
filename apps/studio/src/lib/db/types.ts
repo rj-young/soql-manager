@@ -2,33 +2,11 @@ import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescr
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import type { SshMode } from '@/common/interfaces/IConnection';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock'] as const
+export const DatabaseTypes = ['salesforce'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
-  { name: 'MySQL', value: 'mysql' },
-  { name: 'TiDB', value: 'tidb' },
-  { name: 'MariaDB', value: 'mariadb' },
-  { name: 'Postgres', value: 'postgresql' },
-  { name: 'SQLite', value: 'sqlite' },
-  { name: 'LibSQL', value: 'libsql' },
-  { name: 'SQL Server', value: 'sqlserver' },
-  { name: 'Amazon Redshift', value: 'redshift' },
-  { name: 'CockroachDB', value: 'cockroachdb' },
-  { name: 'GreengageDB', value: 'greengage' },
-  { name: 'Oracle', value: 'oracle' },
-  { name: 'Cassandra', value: 'cassandra' },
-  { name: 'ScyllaDB', value: 'scylladb' },
-  { name: 'BigQuery', value: 'bigquery' },
-  { name: 'Firebird', value: 'firebird'},
-  { name: 'DuckDB', value: 'duckdb' },
-  { name: 'ClickHouse', value: 'clickhouse' },
-  { name: 'MongoDB', value: 'mongodb' },
-  { name: 'SqlAnywhere', value: 'sqlanywhere' },
-  { name: 'Trino', value: 'trino' },
-  { name: 'SurrealDB', value: 'surrealdb' },
-  { name: 'Redis', value: 'redis' },
-  { name: 'Bedrock', value: 'bedrock' }
+  { name: 'Salesforce', value: 'salesforce' },
 ]
 
 /** `value` should be recognized by codemirror */

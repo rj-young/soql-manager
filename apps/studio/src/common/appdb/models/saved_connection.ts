@@ -23,17 +23,11 @@ export interface ConnectionOptions {
 }
 
 function parseConnectionType(t: Nullable<ConnectionType>) {
+  // SOQL Manager: only `salesforce` is recognized. Phase 1 cleanse narrowed
+  // the union; legacy values from existing dev installs map to null.
   if (!t) return null
-
-  const mapping: { [x: string]: ConnectionType } = {
-    psql: 'postgresql',
-    postgres: 'postgresql',
-    mssql: 'sqlserver',
-  }
   const allowed = ConnectionTypes.map(c => c.value)
-  const result = mapping[t] || t
-  if (!allowed.includes(result)) return null
-  return result
+  return allowed.includes(t) ? t : null
 }
 
 export class DbConnectionBase extends ApplicationEntity {
@@ -71,58 +65,9 @@ export class DbConnectionBase extends ApplicationEntity {
   }
 
   public get defaultPort() : Nullable<number> {
-    let port
-    switch (this.connectionType as string) {
-      case 'mysql':
-      case 'mariadb':
-        port = 3306
-        break
-      case 'tidb':
-        port = 4000
-        break
-      case 'postgresql':
-      case 'greengage':
-        port = 5432
-        break
-      case 'sqlserver':
-        port = 1433
-        break
-      case 'cockroachdb':
-        port = 26257
-        break
-      case 'redshift':
-        port = 5432
-        break
-      case 'oracle':
-        port = 1521
-        break
-      case 'cassandra':
-      case 'scylladb':
-        port = 9042
-        break
-      case 'bigquery':
-        port = 443
-        break
-      case 'firebird':
-        port = 3050
-        break
-      case 'sqlanywhere':
-        port = 2638
-        break
-      case 'trino':
-        port = 8080
-        break
-      case 'clickhouse':
-        port = 8123
-        break
-      case 'redis':
-        port = 6379
-        break
-      default:
-        port = null
-    }
-
-    return port
+    // No SQL ports applicable. OAuth loopback redirect runs on a fixed port
+    // (1717) handled by the OAuth flow, not the saved-connection model.
+    return null
   }
 
   _socketPath: Nullable<string> = null
@@ -137,13 +82,7 @@ export class DbConnectionBase extends ApplicationEntity {
   }
 
   public get defaultSocketPath(): Nullable<string> {
-    if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
-      return '/var/run/mysqld/mysqld.sock'
-    } else if (['postgresql', 'greengage'].includes(this.connectionType || '')) {
-      return '/var/run/postgresql'
-    } else if (this.connectionType === 'tidb') {
-      return '/tmp/tidb.sock'
-    }
+    // No DB socket path concept for Salesforce.
     return null
   }
 
@@ -362,102 +301,13 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     return url.includes("://")
   }
 
-  parse(url: string): boolean {
-    try {
-      const endings = [
-        { connectionType: 'sqlite', options: ['.db', '.sqlite', '.sqlite3']},
-        { connectionType: 'duckdb', options: ['.duckdb', '.ddb']}
-      ]
-      // const goodEndings = ['.db', '.sqlite', '.sqlite3']
-      // const duckDbEndings = ['.duckdb', '.ddb']
-      if (!this.smellsLikeUrl(url)) {
-        // it's a sqlite file
-        for (let i = 0; i < endings.length; i++) {
-          const { connectionType, options } = endings[i];
-          if(options.find((e) => url.endsWith(e))) {
-            this.connectionType = connectionType as any
-            this.defaultDatabase = url
-            return true;
-          }
-        }
-      }
-
-      let cleanedUrl = url
-      let extractedUser = undefined
-      let extractedPassword = undefined
-
-      if (url.includes('@')) {
-        const lastAtIndex = url.lastIndexOf('@')
-        let firstDoubleSlash = url.indexOf('//') + 2
-        if (firstDoubleSlash === 1) firstDoubleSlash = 0
-        const credentials = url.substring(firstDoubleSlash, lastAtIndex)
-
-        const [user, ...passwordParts] = credentials.split(':')
-        extractedUser = decodeURIComponent(user)
-        extractedPassword = decodeURIComponent(passwordParts.join(':'))
-
-        cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
-      }
-
-      const encodedUrl = encodeURI(cleanedUrl)
-      const parsed = new ConnectionString(encodedUrl)
-      const parsedUncoded = new ConnectionString(url)
-
-      this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
-      if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
-        this.connectionType = 'redshift'
-      }
-
-      const cockroachOptions = parsedUncoded.params?.options || ''
-      const hasCockroachJwtOption =
-        /--crdb:jwt_auth_enabled=true/.test(cockroachOptions) ||
-        /--crdb(?::|%3A)jwt_auth_enabled(?:=|%3D)true/i.test(url)
-      const hasCockroachClusterOption =
-        /--cluster=([A-Za-z0-9\-_]+)/.test(cockroachOptions) ||
-        /--cluster(?:=|%3D)[A-Za-z0-9\-_]+/i.test(url)
-      const hasCockroachProtocol =
-        ['cockroach', 'cockroachdb'].includes(parsed.protocol as string)
-
-      if ((parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) || hasCockroachJwtOption || hasCockroachClusterOption || hasCockroachProtocol) {
-        this.connectionType = 'cockroachdb'
-        const clusterMatch = cockroachOptions.match(/--cluster=([A-Za-z0-9\-_]+)/)
-        this.options = {
-          ...this.options,
-          cluster: clusterMatch ? clusterMatch[1] : undefined,
-          jwtAuthEnabled: hasCockroachJwtOption,
-        }
-      }
-
-      if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
-        this.ssl = true
-      }
-
-      if (cleanedUrl.startsWith('https://')) {
-        this.ssl = true
-      }
-
-      if (parsed.params?.TrustServerCertificate && parsed.params.TrustServerCertificate === 'true') {
-        this.trustServerCertificate = true
-      }
-
-      this.host = parsed.hostname || this.host
-      this.port = parsed.port || this.port
-      this.username = extractedUser ?? parsed.user
-      this.password = extractedPassword ?? parsed.password
-      this.defaultDatabase = parsed.path?.join('/') ?? this.defaultDatabase
-      return true
-    } catch (ex) {
-      log.error('unable to parse connection string, assuming sqlite file', ex)
-      return false
-    }
-  }
-
-  @BeforeInsert()
-  @BeforeUpdate()
-  checkSqlite(): void {
-    if (this.connectionType === 'sqlite' && !this.defaultDatabase) {
-      throw new Error("database path must be set for SQLite databases")
-    }
+  parse(_url: string): boolean {
+    // Connection-string parsing was for SQL dialects (Postgres, SQL Server,
+    // SQLite file paths, Cockroach JWT options, etc.). Salesforce uses a
+    // My Domain URL captured directly in the connection dialog (Phase 2
+    // Task 2.3). The IPC `appdb/saved/parseUrl` handler stays wired but
+    // always reports failure until Phase 2 replaces this method.
+    return false
   }
 
   @BeforeInsert()
