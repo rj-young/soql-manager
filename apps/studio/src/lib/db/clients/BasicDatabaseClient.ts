@@ -1,19 +1,30 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
-import { Knex } from 'knex';
+// `knex` package removed in Task 1.2; the base class still references its
+// types in dead-code branches (factory throws NotImplemented). Stub `Knex`
+// as `any` so the file compiles. SfClient (Phase 2 Task 2.4) extends a
+// much smaller base. References to `KnexQueryBuilder` are aliased below.
+type Knex = any;
+type KnexQueryBuilder = any;
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
-import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "@bksLogger";
-import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
-import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
-import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
+
+// sql-query-identifier and SSH tunnel infrastructure removed in Tasks 1.3/1.4.
+// These ambient types stand in for the deleted IdentifyResult / ColumnReference
+// / TableReference so the (now-unreachable) base-class methods still typecheck.
+// Phase 2 SfClient extends a much smaller base.
+type IdentifyResult = { type: string; executionType?: string; tables?: TableReference[]; columns?: ColumnReference[] };
+type TableReference = { table: string; schema?: string };
+type ColumnReference = { name: string; table?: string };
+function identify(_q: string, _opts?: unknown): IdentifyResult[] { return []; }
+async function connectTunnel(_config: unknown): Promise<unknown> { throw new Error('SSH tunnels removed in Phase 1 cleanse'); }
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -748,7 +759,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       return ""
     }
 
-    let queryBuilder: Knex.QueryBuilder;
+    let queryBuilder: KnexQueryBuilder;
 
     if (filter.type == 'is') {
       queryBuilder = this.knex.whereNull(filter.field);

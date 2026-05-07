@@ -2,7 +2,6 @@
 
 import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
-import { format } from 'sql-formatter';
 import { TableFilter, TableOrView, Routine, TableColumn } from '@/lib/db/models';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
@@ -110,14 +109,10 @@ export function makeString(value: any): string {
   return _.toString(value);
 }
 
-export function safeSqlFormat(
-  ...args: Parameters<typeof format>
-): ReturnType<typeof format> {
-  try {
-    return format(args[0], args[1]);
-  } catch (ex) {
-    return args[0];
-  }
+// sql-formatter removed in Task 1.4. SOQL-aware formatter lands in Phase 3.
+// Stub returns input unchanged so call sites keep compiling.
+export function safeSqlFormat(sql: string, _options?: unknown): string {
+  return sql;
 }
 
 /** Join filters by AND or OR */

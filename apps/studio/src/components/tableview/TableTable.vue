@@ -335,7 +335,6 @@ import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
-import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
@@ -1593,8 +1592,8 @@ export default Vue.extend({
           deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
-        const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
-        this.$root.$emit(AppEvent.newTab, formatted)
+        // sql-formatter removed in Task 1.4; emit raw SQL until Phase 3 SOQL formatter.
+        this.$root.$emit(AppEvent.newTab, sql)
       } catch(ex) {
         console.error(ex);
         this.pendingChanges.updates.forEach(edit => {

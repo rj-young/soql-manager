@@ -512,7 +512,13 @@
   import Split from 'split.js'
   import Noty from 'noty'
   import { mapGetters, mapState } from 'vuex'
-  import { identify } from 'sql-query-identifier'
+
+  // sql-query-identifier removed in Task 1.4. Phase 2 SOQL editor will plug in
+  // a SOQL-aware splitter; for Phase 1 the editor is inert so identify() is
+  // stubbed to return an empty list — call sites short-circuit through their
+  // existing "no statements" branches.
+  type IdentifyResult = { type: string; executionType?: string; start?: number; end?: number; text?: string };
+  function identify(_text: string, _opts?: unknown): IdentifyResult[] { return []; }
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
@@ -539,7 +545,6 @@
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
-  import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
 

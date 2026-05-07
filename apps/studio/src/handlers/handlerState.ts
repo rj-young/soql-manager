@@ -2,14 +2,14 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/serverTypes";
-import { Export } from "@/lib/export";
-import ImportClass from "@/lib/import"
-import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
-import { ChildProcessWithoutNullStreams } from "child_process";
 import { MessagePortMain } from "electron";
 import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
+
+// SqlGenerator, Export, Import, and ChildProcessWithoutNullStreams (used by
+// backup) removed in Tasks 1.3/1.4. State slots that referenced them are gone
+// or typed `unknown` until Phase 2 reshapes the connection IPC.
 
 export interface TempFile {
   fileObject: tmp.FileResult,
@@ -25,10 +25,6 @@ class State {
   database: string = null;
   username: string = null;
   queries: Map<string, CancelableQuery> = new Map();
-  generator: SqlGenerator = null;
-  exports: Map<string, Export> = new Map();
-  imports: Map<string, ImportClass> = new Map();
-  backupProc: ChildProcessWithoutNullStreams = null;
 
   connectionAbortController: AbortController = null;
 
@@ -63,12 +59,9 @@ export function removeState(id: string): void {
 
 export const errorMessages = {
   noUsername: 'No username provided',
-  noGenerator: 'No sql generator found',
   noDatabase: 'No database connection found',
   noServer: 'No server found',
   noQuery: 'Query not found',
-  noExport: 'Export not found',
-  noImport: 'Import not found'
 };
 
 export function getDriverHandler(name: string) {

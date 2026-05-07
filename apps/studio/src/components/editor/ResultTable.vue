@@ -79,7 +79,6 @@
   import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-  import { format } from 'sql-formatter'
   import pluralize from 'pluralize'
 import { stringToTypedArray } from '@/common/utils'
 
@@ -843,8 +842,8 @@ import { stringToTypedArray } from '@/common/utils'
           };
 
           const sql = await this.connection.applyChangesSql(changes);
-          const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
-          this.$root.$emit(AppEvent.newTab, formatted);
+          // sql-formatter removed in Task 1.4; emit raw SQL until Phase 3.
+          this.$root.$emit(AppEvent.newTab, sql);
         } catch (ex) {
           log.error(ex)
 

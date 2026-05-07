@@ -24,7 +24,6 @@ import Vue from "vue";
 import TextEditor from "./TextEditor.vue";
 import { mapState, mapGetters } from "vuex";
 import { plugins } from "@/lib/editor/utils";
-import { format } from "sql-formatter";
 import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models";
 import CodeMirror from "codemirror";
 
@@ -93,10 +92,7 @@ export default Vue.extend({
   },
   methods: {
     formatSql() {
-      const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.queryDialect)),
-      });
-      this.$emit("input", formatted);
+      // sql-formatter removed in Task 1.4. No-op until Phase 3 SOQL formatter.
     },
     async columnsGetter(tableName: string) {
       let tableToFind = this.tables.find(
