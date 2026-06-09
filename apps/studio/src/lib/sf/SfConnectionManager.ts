@@ -16,19 +16,9 @@ import { SavedConnection } from '@/common/appdb/models/saved_connection';
 import { SfResult, ok, err, asSfAuthError } from './errors';
 import { runOAuthFlow, SfOAuthConfig, SfTokenResponse, DEFAULT_PORT, RunOAuthFlowOptions } from './oauth';
 import { readTokens, writeTokens, SfTokenBlob } from './tokenStore';
+import type { SObjectSummary, SfConnectInfo } from './ipcTypes';
 
-export interface SObjectSummary {
-  name: string;
-  label: string;
-  custom: boolean;
-  queryable: boolean;
-}
-
-export interface SfConnectInfo {
-  orgId: string;
-  userId: string;
-  instanceUrl: string;
-}
+export type { SObjectSummary, SfConnectInfo } from './ipcTypes';
 
 const DEFAULT_API_VERSION = '66.0'; // docs/api-version.md; override via SF_API_VERSION
 

@@ -11,6 +11,12 @@ import 'electron-log/preload';
 import pluralize from 'pluralize';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 import type { NativePluginMenuItem } from '@/services/plugin/types';
+import type {
+  SfConnectResponse,
+  SfDisconnectResponse,
+  SfListSObjectsResponse,
+  SfStatusResponse,
+} from '@/lib/sf/ipcTypes';
 
 const electron = require('@electron/remote');
 
@@ -186,6 +192,22 @@ export const api = {
   fileHelpers: {
     save(options: SaveFileOptions) {
       return ipcRenderer.invoke('fileHelpers:save', options);
+    },
+  },
+  // Salesforce connection channels (Task 2.5). Handlers live in the main
+  // process (lib/sf/ipcHandlers.ts); tokens and the client secret stay there.
+  sf: {
+    connect(savedConnectionId: number): Promise<SfConnectResponse> {
+      return ipcRenderer.invoke('sf:connect', savedConnectionId);
+    },
+    disconnect(savedConnectionId: number): Promise<SfDisconnectResponse> {
+      return ipcRenderer.invoke('sf:disconnect', savedConnectionId);
+    },
+    listSObjects(savedConnectionId: number): Promise<SfListSObjectsResponse> {
+      return ipcRenderer.invoke('sf:listSObjects', savedConnectionId);
+    },
+    status(savedConnectionId: number): Promise<SfStatusResponse> {
+      return ipcRenderer.invoke('sf:status', savedConnectionId);
     },
   },
   addNativeMenuItem(item: NativePluginMenuItem) {

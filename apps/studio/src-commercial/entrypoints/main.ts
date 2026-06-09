@@ -29,6 +29,13 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
+import { initializeSfHandlers } from '@/lib/sf/ipcHandlers'
+import { loadSfEnv } from '@/lib/sf/env'
+
+// Salesforce Connected App credentials (SF_CLIENT_ID etc.) come from a
+// root-level .env.local in dev. Load before anything reads process.env.
+const sfEnvFile = loadSfEnv()
+log.info(sfEnvFile ? `Loaded SF env from ${sfEnvFile}` : 'No .env.local found; SF connect requires SF_CLIENT_ID / SF_CLIENT_SECRET in the environment')
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -178,6 +185,11 @@ ipcMain.handle('platformInfo', () => {
 ipcMain.handle('bksConfigSource', () => {
   return bksConfig.source;
 })
+
+// sf:connect / sf:disconnect / sf:listSObjects / sf:status. Registered at
+// module scope (like the handlers above) so no startup branch can skip them;
+// they only touch the ORM when invoked, well after initBasics() has run.
+initializeSfHandlers()
 
 app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
